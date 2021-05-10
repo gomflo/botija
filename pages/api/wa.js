@@ -1,31 +1,49 @@
-import { WAConnection } from '@adiwajshing/baileys'
+import { WAConnection, MessageType } from '@adiwajshing/baileys'
+import * as WSF from 'wa-sticker-formatter'
 
 export default (req, res) => {
 
   async function connectToWhatsApp() {
     const conn = new WAConnection()
-    // called when WA sends chats
-    // this can take up to a few minutes if you have thousands of chats!
-    conn.on('chats-received', async ({ hasNewChats }) => {
-      console.log(`you have ${conn.chats.length} chats, new chats available: ${hasNewChats}`)
-
-      const unread = await conn.loadAllUnreadMessages()
-      console.log("you have " + unread.length + " unread messages")
-    })
-    // called when WA sends chats
-    // this can take up to a few minutes if you have thousands of contacts!
-    conn.on('contacts-received', () => {
-      console.log('you have ' + Object.keys(conn.contacts).length + ' contacts')
-    })
 
     await conn.connect()
-    conn.on('chat-update', chatUpdate => {
-      // `chatUpdate` is a partial object, containing the updated properties of the chat
-      // received a new message
+    conn.on('chat-update', async chatUpdate => {
+      console.log(chatUpdate)
+
       if (chatUpdate.messages && chatUpdate.count) {
+
         const message = chatUpdate.messages.all()[0]
         console.log(message)
-      } else console.log(chatUpdate) // see updates (can be archived, pinned etc.)
+
+        const msgText = message.message?.extendedTextMessage?.text
+        const msgConversation = message.message?.conversation
+        const msgImage = message.message?.imageMessage
+        const mentionedJid = message.message?.extendedTextMessage?.contextInfo?.mentionedJid
+
+        if (msgText) {
+          // !demote @userids
+          if (msgText.search(/!demote/) >= 0) {
+            await conn.groupDemoteAdmin(chatUpdate.jid, mentionedJid)
+          }
+
+          // !promote @userids
+          if (msgText.search(/!promote/) >= 0) {
+            await conn.groupMakeAdmin(chatUpdate.jid, mentionedJid)
+          }
+        }
+
+        if (msgConversation) {
+
+          // !sticker
+          if (msgConversation.search(/!sticker/) >= 0) {
+            const sticker = new WSF.Sticker('https://pbs.twimg.com/profile_images/1390666848983830528/icRjjnBn_400x400.jpg', {})
+            await sticker.build()
+            const sticBuffer = await sticker.get()
+            await conn.sendMessage(chatUpdate.jid, sticBuffer, MessageType.sticker)
+          }
+        }
+
+      }
     })
   }
   // run in main file
