@@ -1,5 +1,5 @@
 import { WAConnection, MessageType } from '@adiwajshing/baileys'
-import * as WSF from 'wa-sticker-formatter'
+const sharp = require('sharp')
 
 export default (req, res) => {
 
@@ -16,7 +16,7 @@ export default (req, res) => {
         console.log(message)
 
         const msgText = message.message?.extendedTextMessage?.text
-        const msgConversation = message.message?.conversation
+        // const msgConversation = message.message?.conversation
         const msgImage = message.message?.imageMessage
         const mentionedJid = message.message?.extendedTextMessage?.contextInfo?.mentionedJid
 
@@ -32,14 +32,19 @@ export default (req, res) => {
           }
         }
 
-        if (msgConversation) {
+        if (msgImage) {
+          const caption = msgImage.caption
+          if (caption.search(/!sticker/) >= 0) {
 
-          // !sticker
-          if (msgConversation.search(/!sticker/) >= 0) {
-            const sticker = new WSF.Sticker('https://pbs.twimg.com/profile_images/1390666848983830528/icRjjnBn_400x400.jpg', {})
-            await sticker.build()
-            const sticBuffer = await sticker.get()
-            await conn.sendMessage(chatUpdate.jid, sticBuffer, MessageType.sticker)
+            const buffer = await conn.downloadMediaMessage(message)
+            console.log(buffer)
+
+            const bufferWebp = await sharp(buffer)
+              .resize(512, 512)
+              .webp()
+              .toBuffer()
+
+            await conn.sendMessage(chatUpdate.jid, bufferWebp, MessageType.sticker)
           }
         }
 
