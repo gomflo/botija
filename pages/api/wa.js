@@ -24,11 +24,10 @@ export default (req, res) => {
         console.log(message)
 
         const msgImage = message.message?.imageMessage
-
         if (msgImage) {
-          const caption = msgImage.caption
 
-          if (caption.search(/!sticker/) >= 0) {
+          const caption = msgImage.caption
+          if (caption === '!sticker') {
             const buffer = await conn.downloadMediaMessage(message)
             const bufferWebp = await resizeImage(buffer)
             await conn.sendMessage(chatUpdate.jid, bufferWebp, MessageType.sticker)
