@@ -1,9 +1,9 @@
-import { WAConnection, MessageType, Presence } from '@adiwajshing/baileys'
+import { WAConnection, MessageType } from '@adiwajshing/baileys'
 const sharp = require('sharp')
 
 async function resizeImage(img) {
   return await sharp(img)
-    .resize(512, 512)
+    .resize(512)
     .webp()
     .toBuffer()
 }
@@ -33,13 +33,12 @@ export default (req, res) => {
             await conn.sendMessage(chatUpdate.jid, bufferWebp, MessageType.sticker)
           }
         }
-
       }
     })
   }
-  // run in main file
-  connectToWhatsApp()
-    .catch(err => console.log("unexpected error: " + err)) // catch 
 
-  res.status(200).json({ name: 'John Doe' })
+  connectToWhatsApp()
+    .catch(err => console.log('unexpected error: ' + err))
+
+  res.status(200).json({ status: 'ok' })
 }
