@@ -1,44 +1,14 @@
-import { WAConnection, MessageType } from '@adiwajshing/baileys'
-const sharp = require('sharp')
+import { WAConnection } from "@adiwajshing/baileys";
 
-async function resizeImage(img) {
-  return await sharp(img)
-    .resize(512)
-    .webp()
-    .toBuffer()
-}
+import WaService from "../../services/WaService";
 
-export default (req, res) => {
+export default async (req, res) => {
+  const conn = new WAConnection();
+  await conn.connect();
 
-  async function connectToWhatsApp() {
-    const conn = new WAConnection()
+  const waService = new WaService(conn);
 
-    await conn.connect()
+  waService.connectToWhatsApp();
 
-    conn.on('chat-update', async chatUpdate => {
-      console.log(chatUpdate)
-
-      if (chatUpdate.messages && chatUpdate.count) {
-
-        const message = chatUpdate.messages.all()[0]
-        console.log(message)
-
-        const msgImage = message.message?.imageMessage
-        if (msgImage) {
-
-          const caption = msgImage.caption
-          if (caption === '!sticker') {
-            const buffer = await conn.downloadMediaMessage(message)
-            const bufferWebp = await resizeImage(buffer)
-            await conn.sendMessage(chatUpdate.jid, bufferWebp, MessageType.sticker)
-          }
-        }
-      }
-    })
-  }
-
-  connectToWhatsApp()
-    .catch(err => console.log('unexpected error: ' + err))
-
-  res.status(200).json({ status: 'ok' })
-}
+  res.status(200).json({ status: "ok" });
+};
